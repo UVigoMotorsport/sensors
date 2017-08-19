@@ -129,7 +129,7 @@ void loop()
     teeth %= 30;
     toothread = 1;
   }
-  else if (digitalRead(WHEEL_FR) == 1)
+  else if (digitalRead(WHEEL_FR) ==  1 && toothread == 1)
   {
     WHEEL_SPD = calcrotv(micros() - startrot, teeth + 1);
     toothread = 0;
