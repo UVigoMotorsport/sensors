@@ -24,6 +24,7 @@ volatile char started = 0;
 
 int teeth = 0;
 unsigned long startrot = 0;
+unsigned long starttooth = 0;
 int toothread = 0;
 
 float TPSPOS = 0;
@@ -121,6 +122,7 @@ void loop()
 
   if (digitalRead(WHEEL_FR) == 0 && toothread == 0)
   {
+    starttooth = micros();
     if (teeth == 0)
     {
       startrot = micros();
@@ -134,7 +136,7 @@ void loop()
     WHEEL_SPD = calcrotv(micros() - startrot, teeth + 1);
     toothread = 0;
   }
-  if (micros() - startrot > MAX_HALLMICROS)
+  if (micros() - starttooth > MAX_HALLMICROS)
   {
     WHEEL_SPD = 0;
     teeth = 0;
