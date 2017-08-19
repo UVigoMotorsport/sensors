@@ -14,6 +14,8 @@
 
 #define VOLTTOVAL(x) (((float) 1023 * (float) x) / (float) 5)
 
+#define MAX_HALLMICROS 200000
+
 volatile unsigned long rpmsum = 0;
 volatile unsigned long rpmavgn = 0;
 volatile unsigned long teethtime = 0;
@@ -72,7 +74,14 @@ void loop()
     char wheel[6];
 
     Serial.print("{R:");
-    sprintf(rpm, "%05d",  (int) (timetorpm(rpmsum) / (float) rpmavgn));
+    if (teethtime == 0 && rpmsum == 0)
+    {
+      sprintf(rpm, "%05d",  0);
+    }
+    else
+    {
+      sprintf(rpm, "%05d",  (int) (timetorpm(rpmsum) / (float) rpmavgn));
+    }
     Serial.print(rpm);
 
     Serial.print(",T:");
@@ -109,22 +118,28 @@ void loop()
   TEMP = ((float) tempraw - 840.32) / -6.8687; //from excel
 
   NEUT = !digitalRead(NEUTIN);
-  
-  if(digitalRead(WHEEL_FR) == 0 && toothread == 0)
+
+  if (digitalRead(WHEEL_FR) == 0 && toothread == 0)
   {
-    if(teeth == 0)
+    if (teeth == 0)
     {
-      WHEEL_FR = calcrotv(micros() - startrot);
       startrot = micros();
     }
     teeth++;
     teeth %= 30;
     toothread = 1;
   }
-  else if(digitalRead(WHEEL_FR) == 1)
+  else if (digitalRead(WHEEL_FR) == 1)
   {
+    WHEEL_SPD = calcrotv(micros() - startrot, teeth + 1);
     toothread = 0;
   }
+  if (micros() - startrot > MAX_HALLMICROS)
+  {
+    WHEEL_SPD = 0;
+    teeth = 0;
+  }
+
 }
 
 void settps()
@@ -193,7 +208,7 @@ ISR(TIMER1_OVF_vect) //If timer1 overflows, engine is not running
   rpmavgn = 0;
 }
 
-float calcrotv(unsigned long timeMicros) 
+float calcrotv(unsigned long timeMicros, int teeth)
 {
- return ((30*0.0544543) / timeMicros) * 1000000;
+  return ((teeth * 0.0544543) / timeMicros) * 1000000;
 }
